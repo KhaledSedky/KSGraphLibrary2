@@ -45,7 +45,7 @@ public class KSGraphVertex
         }
         else
         {
-            throw new InvalidParameterException("The newEdge parameters was not properly est");
+            throw new InvalidParameterException("The newEdge parameters was not properly set");
             // we should throw an exception
         }
     }
@@ -92,62 +92,63 @@ public class KSGraphVertex
         }
     }
 
-    public ArrayList<KSGraphVertex> ShortestPathUnWeighted(KSGraphVertex targetVertex)
+    public ArrayList<KSGraphVertex> ShortestPathUnWeighted(KSGraphVertex targetVertex) throws InvalidParameterException
     {
-        Queue<KSGraphVertexWeighted> vertexQueue = new LinkedList<KSGraphVertexWeighted>();
-        HashMap<String, KSGraphVertexBackTrack> queuedVertexes = new HashMap<String, KSGraphVertexBackTrack>();
-        //ArrayList<ArrayList<KSGraphVertex>> paths = new ArrayList<ArrayList<KSGraphVertex>>();
-        //ArrayList<KSGraphVertex> path = new ArrayList<KSGraphVertex>();
-        KSGraphVertexWeighted clonedGraphVertexWeighted = new KSGraphVertexWeighted(this);
-        queuedVertexes.put(clonedGraphVertexWeighted.GetVertexName(), new KSGraphVertexBackTrack(clonedGraphVertexWeighted));
-
-        vertexQueue.add(clonedGraphVertexWeighted);
-
-        while(!vertexQueue.isEmpty())
+        ArrayList<KSGraphVertex> path = null;
+       if(targetVertex!=null)
         {
-            KSGraphVertexWeighted currentVertex = vertexQueue.remove();
-            KSGraphVertexWeighted newGraphVertex = null;
-            KSGraphVertexBackTrack newGraphVertexBackTrack = null;
+            Queue<KSGraphVertexWeighted> vertexQueue = new LinkedList<KSGraphVertexWeighted>();
+            HashMap<String, KSGraphVertexBackTrack> queuedVertexes = new HashMap<String, KSGraphVertexBackTrack>();
+            //ArrayList<ArrayList<KSGraphVertex>> paths = new ArrayList<ArrayList<KSGraphVertex>>();
+            //ArrayList<KSGraphVertex> path = new ArrayList<KSGraphVertex>();
+            KSGraphVertexWeighted clonedGraphVertexWeighted = new KSGraphVertexWeighted(this);
+            queuedVertexes.put(clonedGraphVertexWeighted.GetVertexName(), new KSGraphVertexBackTrack(clonedGraphVertexWeighted));
 
-            for(KSGraphEdge edge : currentVertex.GetOutgoingEdges())
-            {
-                if(queuedVertexes.containsKey(edge.GetTargetVertex().GetVertexName()))
-                {
-                    newGraphVertexBackTrack = queuedVertexes.get(edge.GetTargetVertex().GetVertexName());
-                    newGraphVertex = newGraphVertexBackTrack.GetTargetVertex();
-                    if(newGraphVertex.GetVertexWeight()>currentVertex.GetVertexWeight()+1)
-                    {
-                        newGraphVertex.SetVertexWeight(currentVertex.GetVertexWeight()+1);
-                        newGraphVertexBackTrack.GetBackTrackList().clear();
-                        newGraphVertexBackTrack.GetBackTrackList().addAll(queuedVertexes.get(currentVertex.GetVertexName()).GetBackTrackList());
-                        newGraphVertexBackTrack.GetBackTrackList().add(currentVertex);
+            vertexQueue.add(clonedGraphVertexWeighted);
+
+            while (!vertexQueue.isEmpty()) {
+                KSGraphVertexWeighted currentVertex = vertexQueue.remove();
+                KSGraphVertexWeighted newGraphVertex = null;
+                KSGraphVertexBackTrack newGraphVertexBackTrack = null;
+
+                for (KSGraphEdge edge : currentVertex.GetOutgoingEdges()) {
+                    if (queuedVertexes.containsKey(edge.GetTargetVertex().GetVertexName())) {
+                        newGraphVertexBackTrack = queuedVertexes.get(edge.GetTargetVertex().GetVertexName());
+                        newGraphVertex = newGraphVertexBackTrack.GetTargetVertex();
+                        if (newGraphVertex.GetVertexWeight() > currentVertex.GetVertexWeight() + 1) {
+                            newGraphVertex.SetVertexWeight(currentVertex.GetVertexWeight() + 1);
+                            newGraphVertexBackTrack.GetBackTrackList().clear();
+                            newGraphVertexBackTrack.GetBackTrackList().addAll(queuedVertexes.get(currentVertex.GetVertexName()).GetBackTrackList());
+                            newGraphVertexBackTrack.GetBackTrackList().add(currentVertex);
+                        }
+                    } else {
+                        newGraphVertex = (KSGraphVertexWeighted) edge.GetTargetVertex();
+                        KSGraphVertexBackTrack backTrack = new KSGraphVertexBackTrack(newGraphVertex);
+                        backTrack.GetBackTrackList().addAll(queuedVertexes.get(currentVertex.GetVertexName()).GetBackTrackList());
+                        backTrack.GetBackTrackList().add(currentVertex);
+                        queuedVertexes.put(newGraphVertex.GetVertexName(), backTrack);
+                        newGraphVertex.SetVertexWeight(currentVertex.GetVertexWeight() + 1);
                     }
-                }
-                else
-                {
-                    newGraphVertex = (KSGraphVertexWeighted) edge.GetTargetVertex();
-                    KSGraphVertexBackTrack backTrack = new KSGraphVertexBackTrack(newGraphVertex);
-                    backTrack.GetBackTrackList().addAll(queuedVertexes.get(currentVertex.GetVertexName()).GetBackTrackList());
-                    backTrack.GetBackTrackList().add(currentVertex);
-                    queuedVertexes.put(newGraphVertex.GetVertexName(), backTrack);
-                    newGraphVertex.SetVertexWeight(currentVertex.GetVertexWeight()+1);
-                }
 
-                vertexQueue.add((KSGraphVertexWeighted) edge.GetTargetVertex());
+                    vertexQueue.add((KSGraphVertexWeighted) edge.GetTargetVertex());
+                }
+            }
+
+            //
+            // CodeGuru should have ensured that we are not de-referencing a null pointer
+            //
+            //return queuedVertexes.get(targetVertex.GetVertexName()).GetBackTrackList();
+           KSGraphVertexBackTrack queryTarget = queuedVertexes.get(targetVertex.GetVertexName());
+            if(queryTarget!=null)
+            {
+                path = queryTarget.GetBackTrackList();
             }
         }
-
-        //
-        // CodeGuru should have ensured that we are not de-referencing a null pointer
-        //
-        return queuedVertexes.get(targetVertex.GetVertexName()).GetBackTrackList();
-        /*ArrayList<KSGraphVertex> path = null;
-        KSGraphVertexBackTrack queryTarget = queuedVertexes.get(targetVertex.GetVertexName());
-        if(queryTarget!=null)
+        else
         {
-            path = queryTarget.GetBackTrackList();
+            throw new InvalidParameterException("The target vertex was not properly set");
         }
-        return path;*/
+        return path;
     }
 
     public  HashMap<String, KSGraphVertex> CloneGraph()
@@ -194,7 +195,8 @@ public class KSGraphVertex
 
     public static HashMap<String, KSGraphVertex> CloneGraph(KSGraphVertex graphRoot)
     {
-        HashMap<String, KSGraphVertex> clonedGraph = new HashMap<String, KSGraphVertex>();
+        return graphRoot.CloneGraph();
+        /*HashMap<String, KSGraphVertex> clonedGraph = new HashMap<String, KSGraphVertex>();
         Queue<ArrayList<KSGraphVertex>> graphQueue = new LinkedList<ArrayList<KSGraphVertex>>();
         ArrayList<KSGraphVertex> pairGraphVertex = new ArrayList<KSGraphVertex>();
         KSGraphVertex newGraphVertex = new KSGraphVertex(graphRoot.GetVertexName());
@@ -229,7 +231,7 @@ public class KSGraphVertex
             }
         }
 
-        return clonedGraph;
+        return clonedGraph;*/
     }
 
     public static ArrayList<KSGraphVertex> TopologicalSort(HashMap<String, KSGraphVertex> clonedGraph, KSGraphVertex graphRoot)
